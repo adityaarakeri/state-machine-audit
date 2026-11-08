@@ -1,0 +1,87 @@
+{
+  "fixture": "py-jobqueue",
+  "notes": "Python job queue. Five required planted bugs, one optional, two decoys, no explicit state machine (an enum alone does not count). Ships a pre-existing REPORT.md to test the no-overwrite rule.",
+  "explicitMachines": 0,
+  "canaries": ["EVALCANARY"],
+  "preexistingReport": "REPORT.md",
+  "expected": [
+    {
+      "id": "P1",
+      "title": "is_running/is_done/is_failed duplicate status and drift (is_running never cleared, is_done set before failure)",
+      "vectors": [1],
+      "required": true,
+      "severity": ["Moderate", "Minor"],
+      "locations": [
+        { "file": "jobs/models.py", "lines": [19, 23] },
+        { "file": "jobs/worker.py", "lines": [16, 31] }
+      ]
+    },
+    {
+      "id": "P2",
+      "title": "Worker claims jobs with read-then-write and no lock; two workers can run the same job",
+      "vectors": [3],
+      "required": true,
+      "severity": ["Critical", "Moderate"],
+      "locations": [
+        { "file": "jobs/worker.py", "lines": [9, 19] },
+        { "file": "jobs/repository.py", "lines": [24, 35] }
+      ]
+    },
+    {
+      "id": "P3",
+      "title": "Status written from worker, api and repository with no transition guard; completed jobs can be cancelled or reset to pending",
+      "vectors": [2],
+      "required": true,
+      "severity": ["Critical", "Moderate"],
+      "locations": [
+        { "file": "jobs/api.py", "lines": [5, 14] },
+        { "file": "jobs/worker.py", "lines": [16, 31] },
+        { "file": "jobs/repository.py", "lines": [30, 35] }
+      ]
+    },
+    {
+      "id": "P4",
+      "title": "Completion email sent before the COMPLETED commit and its errors are swallowed",
+      "vectors": [4],
+      "required": true,
+      "severity": ["Critical", "Moderate"],
+      "locations": [
+        { "file": "jobs/worker.py", "lines": [22, 31] },
+        { "file": "jobs/notify.py", "lines": [4, 9] }
+      ]
+    },
+    {
+      "id": "P5",
+      "title": "Raw DB status loaded without validation; job_label has no entry for cancelled",
+      "vectors": [5],
+      "required": true,
+      "severity": ["Moderate", "Minor"],
+      "locations": [
+        { "file": "jobs/repository.py", "lines": [14, 21] },
+        { "file": "jobs/api.py", "lines": [17, 24] }
+      ]
+    },
+    {
+      "id": "P6",
+      "title": "Handler lookup sits outside the try, so an unknown kind leaves the job stuck in running",
+      "vectors": [4, 5],
+      "required": false,
+      "severity": ["Critical", "Moderate"],
+      "locations": [{ "file": "jobs/worker.py", "lines": [19, 23] }]
+    }
+  ],
+  "decoys": [
+    {
+      "id": "D1",
+      "file": "jobs/config.py",
+      "lines": [3, 6],
+      "why": "Independent feature flags read from the environment."
+    },
+    {
+      "id": "D2",
+      "file": "jobs/repository.py",
+      "lines": [38, 46],
+      "why": "Atomic claim with FOR UPDATE SKIP LOCKED. This is the fix, not the bug."
+    }
+  ]
+}

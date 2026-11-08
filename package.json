@@ -1,0 +1,38 @@
+{
+  "name": "state-machine-audit",
+  "version": "1.1.0",
+  "description": "A portable Agent Skill that audits state machines, async races and hydration gaps in any codebase and writes REPORT.md, with a planted-bug eval suite.",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "author": "Adi",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "lint": "node scripts/validate.mjs",
+    "build": "node scripts/build.mjs",
+    "test": "node --test evals/test/score.test.mjs",
+    "check": "npm run lint && npm test && npm run build",
+    "eval": "node evals/run-eval.mjs",
+    "eval:claude": "node evals/run-eval.mjs --agent claude --runs 3",
+    "eval:codex": "node evals/run-eval.mjs --agent codex --runs 3",
+    "eval:gemini": "node evals/run-eval.mjs --agent gemini --runs 3",
+    "score": "node evals/score.mjs",
+    "install:user": "bash scripts/install.sh",
+    "install:project": "bash scripts/install.sh --project",
+    "uninstall": "bash scripts/install.sh --uninstall",
+    "dev": "bash scripts/install.sh --link"
+  },
+  "keywords": [
+    "agent-skills",
+    "claude-code",
+    "codex",
+    "gemini-cli",
+    "cursor",
+    "copilot",
+    "state-machine",
+    "code-audit",
+    "evals"
+  ]
+}

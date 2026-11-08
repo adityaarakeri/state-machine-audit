@@ -1,0 +1,100 @@
+{
+  "fixture": "react-shop",
+  "notes": "TypeScript/React storefront. Six required planted bugs, one optional, three decoys, one explicit state machine.",
+  "explicitMachines": 1,
+  "canaries": ["EVALCANARY"],
+  "expected": [
+    {
+      "id": "E1",
+      "title": "Four independent loading/error/success/retry flags; error path never clears isLoading",
+      "vectors": [1],
+      "required": true,
+      "severity": ["Moderate", "Minor"],
+      "locations": [{ "file": "src/hooks/useUserProfile.ts", "lines": [6, 32] }]
+    },
+    {
+      "id": "E2",
+      "title": "Profile fetch has no abort or staleness guard; old userId response overwrites new",
+      "vectors": [3],
+      "required": true,
+      "severity": ["Moderate", "Minor"],
+      "locations": [{ "file": "src/hooks/useUserProfile.ts", "lines": [11, 31] }]
+    },
+    {
+      "id": "E3",
+      "title": "Order status is a raw string written from many functions; refunded/shipped orders can be reopened to pending",
+      "vectors": [2],
+      "required": true,
+      "severity": ["Critical", "Moderate"],
+      "locations": [
+        { "file": "src/features/checkout/checkout.ts", "lines": [9, 33] },
+        { "file": "src/features/admin/refunds.ts", "lines": [4, 20] }
+      ]
+    },
+    {
+      "id": "E4",
+      "title": "Order marked paid and tracked before the charge; charge failure is swallowed",
+      "vectors": [4],
+      "required": true,
+      "severity": ["Critical"],
+      "locations": [{ "file": "src/features/checkout/checkout.ts", "lines": [13, 28] }]
+    },
+    {
+      "id": "E5",
+      "title": "localStorage draft cast to CheckoutDraft without validation; unknown step crashes stepTitle",
+      "vectors": [5],
+      "required": true,
+      "severity": ["Moderate", "Minor"],
+      "locations": [{ "file": "src/lib/storage.ts", "lines": [14, 29] }]
+    },
+    {
+      "id": "E6",
+      "title": "401 handled three different ways in three modules",
+      "vectors": [6],
+      "required": true,
+      "severity": ["Moderate", "Minor"],
+      "locations": [
+        { "file": "src/api/orders.ts", "lines": [8, 11] },
+        { "file": "src/api/profile.ts", "lines": [8, 11] },
+        { "file": "src/features/notifications/poller.ts", "lines": [3, 13] }
+      ]
+    },
+    {
+      "id": "E7",
+      "title": "Notification poller has no stop path and keeps polling after logout",
+      "vectors": [3, 6],
+      "required": false,
+      "severity": ["Moderate", "Minor"],
+      "locations": [{ "file": "src/features/notifications/poller.ts", "lines": [1, 14] }]
+    },
+    {
+      "id": "E8",
+      "title": "No in-flight guard or idempotency key on submitOrder; a double click charges twice",
+      "vectors": [3, 4],
+      "required": false,
+      "severity": ["Critical", "Moderate"],
+      "locations": [{ "file": "src/features/checkout/checkout.ts", "lines": [13, 28] }],
+      "source": "Not planted. Found by an agent during an eval run and confirmed by hand."
+    }
+  ],
+  "decoys": [
+    {
+      "id": "D1",
+      "file": "src/components/Layout.tsx",
+      "lines": [4, 6],
+      "why": "Independent UI toggles; every combination is valid."
+    },
+    {
+      "id": "D2",
+      "file": "src/hooks/useSearch.ts",
+      "lines": [3, 27],
+      "why": "Discriminated union plus AbortController with cleanup. This is the correct pattern."
+    },
+    {
+      "id": "D3",
+      "file": "src/features/upload/uploadMachine.ts",
+      "lines": [1, 19],
+      "why": "Explicit transition table with a guard that throws on illegal moves."
+    }
+  ]
+}

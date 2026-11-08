@@ -1,0 +1,8 @@
+{
+  "name": "react-shop-fixture",
+  "private": true,
+  "description": "Eval fixture with planted state bugs. Not a real app.",
+  "dependencies": {
+    "react": "^19.0.0"
+  }
+}

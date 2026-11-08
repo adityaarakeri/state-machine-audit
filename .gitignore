@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.DS_Store
+*.log
+.env
+.vscode/
+.idea/
+# reports from running the skill on this repo itself (root only, so the
+# pre-existing REPORT.md inside evals/fixtures stays tracked)
+/REPORT.md
+/REPORT-state-audit*.md
+# eval run output
+evals/results/
