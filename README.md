@@ -1,6 +1,14 @@
 # state-machine-audit
 
-A skill you drop into your coding agent that reads through a codebase, hunts for the ways its state can go sideways, and writes up what it found in `REPORT.md`. It never touches your code.
+### Find the states you never intended.
+
+An evidence-backed audit of state machines, async races, and persistence hydration. Your coding agent reads the code and writes `REPORT.md`, with exact locations, failure scenarios, and structural fixes. Application code stays untouched.
+
+**Read-only audit** / **Six audit vectors** / **MIT licensed**
+
+[Field runbook](index.html) · [Install](#quick-start) · [Example request](#example-request) · [Evaluation results](evals/RESULTS.md) · [Astack](https://github.com/adityaarakeri/Astack)
+
+Download or open `index.html` locally for the interactive runbook: agent-specific install commands, a checkout race walkthrough, verification checklist, and troubleshooting. It is self-contained and works without external assets.
 
 Works with Claude Code, OpenAI Codex, Gemini CLI, Cursor, GitHub Copilot, and anything else that reads the Agent Skills format. For tools that don't, `npm run build` spits out a version they can use.
 
@@ -19,7 +27,19 @@ Each finding in the report comes with the file, the line numbers, the actual cod
 
 ## Quick start
 
-You need Node 18 or newer, plus bash for the installer.
+With Node 22.20+ and your coding agent installed, choose your agent in the Skills CLI:
+
+```bash
+npx skills add adityaarakeri/state-machine-audit --skill state-machine-audit --global
+```
+
+For a specific agent, append `--agent claude-code`, `--agent codex`, `--agent antigravity` (agy), or `--agent opencode`. Omit `--global` to install only in the current project. These identifiers and requirements follow the [Skills CLI documentation](https://github.com/vercel-labs/skills).
+
+Reopen your agent in the repository you want audited, then send the example request below.
+
+### Install from source
+
+The bundled scripts need Node 18 or newer, plus Bash for the installer. On Windows, use Git Bash or WSL for Bash commands.
 
 ```bash
 git clone https://github.com/adityaarakeri/state-machine-audit.git
@@ -28,17 +48,21 @@ npm run check            # validate + build adapters
 npm run install:user     # install for every project on this machine
 ```
 
-Then open any repo in your agent and say something like:
+### Example request
 
-> Run the state-machine-audit skill on this repo.
-
-You'll get `REPORT.md` in the repo root.
-
-If you'd rather install with the community Skills CLI, use:
-
-```bash
-npx skills add adityaarakeri/state-machine-audit
+```text
+Use the state-machine-audit skill on this repository.
+Focus on checkout, payment status transitions, and stale async responses.
+Do not change application code. Write an evidence-backed report with
+exact file locations, verbatim snippets, and structural fixes.
+State the audited scope and any skipped modules.
 ```
+
+You'll get `REPORT.md` in the repo root, or a fresh fallback filename if it exists. Review the evidence and compare `git status --short` with your pre-audit baseline before requesting fixes separately.
+
+For example, a payment response may arrive after checkout cancellation and overwrite the newer status. The audit should establish that event ordering, check existing guards, and propose a centralized transition rule or operation identity. The [runbook](index.html#example) walks through this illustrative race.
+
+For a practice run, open `evals/fixtures/react-shop/` in your agent and request the audit there. The fixture contains planted bugs and correct decoys; keep `evals/expected/` out of the agent's context.
 
 ## Installing per agent
 
