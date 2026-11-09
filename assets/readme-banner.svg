@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="420" viewBox="0 0 1200 420" role="img" aria-labelledby="title desc">
+  <title id="title">state-machine-audit: Catch the impossible state.</title>
+  <desc id="desc">A payment moves from paying to cancelled, then an unexpected late response moves it to paid.</desc>
+  <defs>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M 32 0 L 0 0 0 32" fill="none" stroke="#223047" stroke-width="1"/></pattern>
+    <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#101c2e"/><stop offset="1" stop-color="#080e18"/></linearGradient>
+  </defs>
+  <rect width="1200" height="420" rx="20" fill="url(#bg)"/>
+  <rect width="1200" height="420" rx="20" fill="url(#grid)" opacity=".45"/>
+  <rect x="48" y="46" width="5" height="24" rx="2" fill="#a3e635"/>
+  <text x="68" y="64" fill="#a3e635" font-family="monospace" font-size="17" letter-spacing="2">STATE-MACHINE-AUDIT</text>
+  <text x="48" y="139" fill="#f1f5f9" font-family="sans-serif" font-weight="700" font-size="54">Catch the impossible state.</text>
+  <text x="50" y="180" fill="#a5b4c8" font-family="sans-serif" font-size="22">Give your coding agent a sharper question: how can this go wrong?</text>
+  <g font-family="monospace" font-size="23" text-anchor="middle">
+    <rect x="50" y="235" width="245" height="70" rx="10" fill="#142334" stroke="#537084"/>
+    <text x="172" y="279" fill="#e2e8f0">paying</text>
+    <path d="M 312 270 H 385 l -10 -7 m 10 7 l -10 7" fill="none" stroke="#94a3b8" stroke-width="2"/>
+    <rect x="405" y="235" width="245" height="70" rx="10" fill="#142334" stroke="#537084"/>
+    <text x="527" y="279" fill="#e2e8f0">cancelled</text>
+    <path d="M 669 270 H 842 l -10 -7 m 10 7 l -10 7" fill="none" stroke="#fb7185" stroke-width="2" stroke-dasharray="6 5"/>
+    <text x="755" y="326" fill="#fda4af" font-size="15">late response</text>
+    <rect x="865" y="235" width="285" height="70" rx="10" fill="#321c2b" stroke="#fb7185" stroke-width="2"/>
+    <text x="1007" y="279" fill="#fda4af">paid ?</text>
+  </g>
+  <text x="50" y="377" fill="#a5b4c8" font-family="monospace" font-size="15" letter-spacing="1">6 AUDIT VECTORS / EVIDENCE-BACKED FINDINGS / ONE REPORT</text>
+</svg>

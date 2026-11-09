@@ -1,54 +1,53 @@
 # state-machine-audit
 
-### Find the states you never intended.
+<div align="center">
 
-An evidence-backed audit of state machines, async races, and persistence hydration. Your coding agent reads the code and writes `REPORT.md`, with exact locations, failure scenarios, and structural fixes. Application code stays untouched.
+<img src="assets/readme-banner.svg" alt="Catch the impossible state: a cancelled payment becomes paid after a late response." width="1200">
 
-**Read-only audit** / **Six audit vectors** / **MIT licensed**
+### Find the states your app was never supposed to reach.
 
-[Field runbook](index.html) · [Install](#quick-start) · [Example request](#example-request) · [Evaluation results](evals/RESULTS.md) · [Astack](https://github.com/adityaarakeri/Astack)
+An Agent Skill for state machines, race conditions, and the bugs between events.
 
-Download or open `index.html` locally for the interactive runbook: agent-specific install commands, a checkout race walkthrough, verification checklist, and troubleshooting. It is self-contained and works without external assets.
+[![License: MIT](https://img.shields.io/badge/license-MIT-a3e635?style=flat-square&labelColor=172033)](LICENSE)
+[![Agent Skill](https://img.shields.io/badge/Agent-Skill-38bdf8?style=flat-square&labelColor=172033)](skills/state-machine-audit/SKILL.md)
+[![Audit vectors: 6](https://img.shields.io/badge/audit_vectors-6-a3e635?style=flat-square&labelColor=172033)](#what-it-catches)
+[![Repository scripts: zero dependencies](https://img.shields.io/badge/repo_scripts-zero_dependencies-38bdf8?style=flat-square&labelColor=172033)](package.json)
 
-Works with Claude Code, OpenAI Codex, Gemini CLI, Cursor, GitHub Copilot, and anything else that reads the Agent Skills format. For tools that don't, `npm run build` spits out a version they can use.
+**[Get started](#quick-start) &nbsp; / &nbsp; [See the results](#tested-against-bugs-with-known-answers) &nbsp; / &nbsp; [Explore a report](skills/state-machine-audit/references/report-template.md)**
 
-## What it actually checks
+</div>
 
-Six things, roughly in order of how often they bite:
+---
 
-1. **Boolean soup.** `isLoading`, `isError`, `isSuccess` all living side by side, so nothing stops two of them being true at once.
-2. **Status fields anyone can overwrite.** A `status` string that five different files write to, with no rule about which moves are legal.
-3. **Late async writes.** A request that comes back after the user already left the page, and stomps on newer data.
-4. **Side effects tangled into transitions.** The order gets marked paid, then the charge fails, and nothing undoes the first step.
-5. **Unchecked hydration.** A status read from the database or localStorage and trusted blindly, until someone renames a state and old rows break things.
-6. **Copy-pasted global handling.** Every module has its own `if 401 then logout`, and they've all drifted apart.
+## "That state should be impossible."
 
-Each finding in the report comes with the file, the line numbers, the actual code, what can go wrong, and a sketch of a structural fix.
+A cancelled checkout turns "paid." A slow request replaces the profile you just opened. A background job says "done," but the work never finished.
+
+These bugs live between events. Each function can look reasonable on its own.
+
+`state-machine-audit` gives your coding agent a repeatable way to investigate them. It traces state transitions, async work, and persisted data, then writes an evidence-backed `REPORT.md` with the code, the failure scenario, and a proposed fix.
+
+| Trace the failure | Bring the evidence | Make it actionable |
+| :--- | :--- | :--- |
+| Follow transitions, cancellations, and late responses. | Cite real code with verified locations. | Get severity, a failure scenario, and a structural fix. |
+
+> **One new report. Your application code stays untouched.** The skill instructs your agent to investigate first; you decide which fixes to take on.
 
 ## Quick start
 
-With Node 22.20+ and your coding agent installed, choose your agent in the Skills CLI:
+**1. Install the skill.**
+
+Install with the [Skills CLI](https://github.com/vercel-labs/skills) using Node.js 22.20 or newer:
 
 ```bash
-npx skills add adityaarakeri/state-machine-audit --skill state-machine-audit --global
+npx skills add adityaarakeri/state-machine-audit --skill state-machine-audit -g
 ```
 
-For a specific agent, append `--agent claude-code`, `--agent codex`, `--agent antigravity` (agy), or `--agent opencode`. Omit `--global` to install only in the current project. These identifiers and requirements follow the [Skills CLI documentation](https://github.com/vercel-labs/skills).
+Choose your coding agent when prompted. Omit `-g` to install only in the current project.
 
-Reopen your agent in the repository you want audited, then send the example request below.
+**2. Open your repository and ask.**
 
-### Install from source
-
-The bundled scripts need Node 18 or newer, plus Bash for the installer. On Windows, use Git Bash or WSL for Bash commands.
-
-```bash
-git clone https://github.com/adityaarakeri/state-machine-audit.git
-cd state-machine-audit
-npm run check            # validate + build adapters
-npm run install:user     # install for every project on this machine
-```
-
-### Example request
+Start a fresh agent session in the repository you want audited:
 
 ```text
 Use the state-machine-audit skill on this repository.
@@ -58,148 +57,191 @@ exact file locations, verbatim snippets, and structural fixes.
 State the audited scope and any skipped modules.
 ```
 
-You'll get `REPORT.md` in the repo root, or a fresh fallback filename if it exists. Review the evidence and compare `git status --short` with your pre-audit baseline before requesting fixes separately.
+Replace the focus areas with yours: background jobs, authentication, uploads, subscriptions, or whatever keeps producing "can't reproduce" tickets.
 
-For example, a payment response may arrive after checkout cancellation and overwrite the newer status. The audit should establish that event ordering, check existing guards, and propose a centralized transition rule or operation identity. The [runbook](index.html#example) walks through this illustrative race.
+**3. Read the evidence.**
 
-For a practice run, open `evals/fixtures/react-shop/` in your agent and request the audit there. The fixture contains planted bugs and correct decoys; keep `evals/expected/` out of the agent's context.
+The output is `REPORT.md` at the repository root. If a report already exists, the skill instructs the agent to use a fresh filename. Review the findings, then request fixes separately.
 
-## Installing per agent
+Want to try it before pointing it at your app? Open `evals/fixtures/react-shop/` in your agent and run the same request. It contains deliberately planted bugs and correct code that should be left alone. Keep `evals/expected/` out of the agent's context.
 
-| Agent | What it reads | How to install |
-|---|---|---|
-| Claude Code | `~/.claude/skills/` or `.claude/skills/` | `bash scripts/install.sh --agent claude` (add `--project` for one repo) |
-| OpenAI Codex | `~/.agents/skills/` or `.agents/skills/` | `bash scripts/install.sh --agent codex` |
-| Cursor | `.claude/skills/` in the project, or a rule file | `bash scripts/install.sh --project --agent cursor`, or copy `dist/cursor/.cursor/` into your repo |
-| Gemini CLI | skills or `GEMINI.md` | copy `dist/GEMINI.md` into the repo root |
-| GitHub Copilot | `.github/prompts/*.prompt.md` | copy `dist/copilot/.github/` into your repo, then run `/state-machine-audit` in chat |
-| Windsurf, Amp, others | `AGENTS.md` | copy `dist/AGENTS.md` into the repo root |
-| Anything with a chat box | nothing special | paste `dist/prompt/state-machine-audit.md` |
+## The kind of bug this is for
 
-With no `--agent`, a user-level install writes to both `~/.claude/skills` and `~/.agents/skills`. A project install writes only to `.claude/skills`, because some editors scan both folders inside a repo and would show the skill twice.
+Imagine a checkout with a payment request still in flight:
 
-Folder locations keep shifting as these tools evolve. If your agent can't find the skill, check its docs for where it looks, then point the installer there:
+```text
+1. Customer clicks Pay.              status = paying
+2. Customer cancels.                 status = cancelled
+3. The old payment request returns.  status = paid
+```
+
+The last assignment might be perfectly valid TypeScript. The problem is whether that operation still has permission to change the state.
+
+A useful audit follows the whole sequence: who starts the work, who can cancel it, what happens when it finishes, and whether an existing guard prevents the stale write. It then proposes a fix that fits the lifecycle, such as checking operation identity and enforcing legal transitions in one place.
+
+That's the question behind this skill: **can the system reach a state nobody designed for?**
+
+## What it catches
+
+| Audit area | What can go wrong |
+| --- | --- |
+| **Contradictory flags** | `isLoading`, `isError`, and `isSuccess` describe one operation but can disagree. |
+| **Unguarded transitions** | Several modules write a status field, allowing a cancelled job to become running again. |
+| **Async races** | An older response arrives last and overwrites newer data. |
+| **Side-effect failures** | An order is marked paid before the charge succeeds, leaving state and reality out of sync. |
+| **Unchecked hydration** | Old database rows or localStorage values enter the app as states the current code no longer understands. |
+| **Scattered recovery logic** | Logout, cancellation, or retry handling differs across modules and leaves parts of the app behind. |
+
+You don't need a state-machine library to use it. Status strings, enums, boolean flags, reducers, and worker lifecycles all give the audit something to follow.
+
+The [audit reference](skills/state-machine-audit/references/audit-vectors.md) contains the detailed checks and language-specific search leads.
+
+## What you get back
+
+Every finding must include:
+
+- **Evidence:** file locations, confirmed line ranges, and verbatim code snippets.
+- **A failure scenario:** the sequence of events that triggers the problem and what breaks.
+- **Severity:** Critical, Moderate, or Minor, using a shared rubric.
+- **A structural fix:** a recommendation in the project's own language and idioms.
+
+The report also includes a state-machine inventory, the scope covered, skipped areas, and a prioritized remediation roadmap. See the [report template and worked finding](skills/state-machine-audit/references/report-template.md) for the full format.
+
+The instructions require evidence for every finding and exclude praise disguised as a warning. Independent UI toggles are not automatically "boolean soup." A race that an existing cancellation guard already prevents is not a finding.
+
+## Tested against bugs with known answers
+
+The repository includes small TypeScript and Python projects with planted defects, correct decoys, secret canaries, and an existing report that must survive the audit.
+
+The recorded **v1.1.0 confirmation batch** used fresh headless Claude Code sessions:
+
+<div align="center">
+
+**6 / 6 fixture runs passed &nbsp; | &nbsp; 0 decoys flagged &nbsp; | &nbsp; 0 invented snippets**
+
+Small TypeScript and Python fixtures. Full results below.
+
+</div>
+
+| Fixture | Runs passed | Required bugs found per run | Decoys flagged | Invented snippets |
+| --- | --- | --- | --- | --- |
+| React shop / TypeScript | 3 of 3 | 6 of 6 | 0 | 0 |
+| Job queue / Python | 3 of 3 | 5 of 5 | 0 | 0 |
+| Both fixtures via the `AGENTS.md` adapter | 2 of 2 | All required bugs | 0 | 0 |
+
+The first draft passed only 2 of 4 runs. Those failures helped tighten the instructions and expose scorer bugs. The [evaluation history](evals/RESULTS.md) records the changes and results.
+
+**These are small-fixture results, not a guarantee for your codebase.** Other agents, large repositories, and languages beyond TypeScript and Python have not been validated by these runs. The suite checks recall, false positives, snippet accuracy, file integrity, report structure, and secret leaks. [See how scoring works](evals/README.md).
+
+## Agent support and installation options
+
+The source is an Agent Skill: a `SKILL.md` file plus supporting references. The repository also generates adapters for tools that consume rules, prompt files, or repository instructions. Packaging support is broader than the agents covered by the evaluations above.
+
+### Install from source
+
+<details>
+<summary><strong>Clone, validate, and install for your agent</strong></summary>
+
+Repository scripts require Node.js 18 or newer, with no npm dependencies. The installer also needs Bash; on Windows, use Git Bash or WSL.
+
+```bash
+git clone https://github.com/adityaarakeri/state-machine-audit.git
+cd state-machine-audit
+npm run check
+bash scripts/install.sh --agent claude
+```
+
+Use `--agent codex` for the shared `.agents/skills` location. With no agent argument, the installer writes to both `~/.claude/skills` and `~/.agents/skills`.
+
+For a project installation, run the installer from the **target repository**:
+
+```bash
+bash /path/to/state-machine-audit/scripts/install.sh --project --agent codex
+```
+
+Reopen your agent after installing. The installer replaces an existing copy of this skill at its destination.
+
+</details>
+
+### Generated adapters
+
+<details>
+<summary><strong>Cursor, Copilot, Gemini, AGENTS.md, and standalone prompts</strong></summary>
+
+Run `npm run build` from this repository to generate:
+
+| Format | Generated file |
+| --- | --- |
+| Cursor rule | `dist/cursor/.cursor/rules/state-machine-audit.mdc` |
+| Copilot prompt | `dist/copilot/.github/prompts/state-machine-audit.prompt.md` |
+| Gemini instructions | `dist/GEMINI.md` |
+| Agent instructions | `dist/AGENTS.md` |
+| Standalone prompt | `dist/prompt/state-machine-audit.md` |
+
+Copy the relevant rule or prompt into your target project. For `AGENTS.md` or `GEMINI.md`, merge the generated instructions if that file already exists. All adapters include the references, so they can stand alone.
+
+</details>
+
+The [interactive runbook](index.html) covers installation, the checkout example, report verification, and troubleshooting. Download or open it locally in a browser; it needs no external assets.
+
+<details>
+<summary>Custom install locations, live editing, and removal</summary>
+
+Override the bundled installer's destination:
 
 ```bash
 SKILL_TARGETS="$HOME/.some-agent/skills" bash scripts/install.sh
-npm run uninstall    # removes what the installer added
 ```
 
-## How this works (the concepts, explained)
+Use `npm run dev` to symlink the skill into the default user locations while editing it.
 
-### What a "skill" is
-
-Think of a skill like a laminated recipe card you tape inside a kitchen cabinet. The cook (your agent) doesn't memorize every recipe. It glances at the labels on all the cards, and only pulls one out and reads it fully when someone orders that dish.
-
-Technically a skill is just a folder with a `SKILL.md` file in it. The top of that file has a small YAML block with a `name` and a `description`. The description is the label on the card. Agents read every skill's description at startup, which is cheap, and only load the full instructions when your request matches.
-
-That "read the label first, open the card later" trick is called **progressive disclosure**. It's why you can have dozens of skills installed without eating your context window.
-
-### Why there's a `references/` folder
-
-The recipe card analogy goes one step further. A good recipe card says "for the sauce, see card 12" instead of cramming everything onto one card. `SKILL.md` here is the short main card: the rules and the workflow. The detailed stuff (search patterns per language, the severity table, the report layout) lives in `references/`, and the agent only opens those when it reaches that step.
-
-This keeps the main file small enough that agents follow it reliably. Long instruction files tend to get skimmed, by models and by people.
-
-### Why there's a build step
-
-Not every tool reads skill folders yet. Some only understand a single file in a specific spot: Cursor wants `.mdc` rules, Copilot wants `.prompt.md` files, a lot of CLIs read `AGENTS.md`.
-
-The build script is like a travel adapter for a power plug. Same electricity, different plug shape. It takes the one real source (`skills/`), inlines the reference files so nothing points at a missing path, and writes out each format into `dist/`. You only ever edit `skills/`. Anything in `dist/` gets overwritten on the next build.
-
-### Why "read-only" is a hard rule
-
-An audit that edits code isn't an audit anymore, it's an unreviewed refactor. The skill is told it may write exactly one file, `REPORT.md`, and its last step is to check `git status` to prove nothing else changed. If you want fixes, read the report, pick findings, and ask for them separately.
-
-## Repo layout
-
-```
-skills/
-  state-machine-audit/
-    SKILL.md                    the skill itself (source of truth)
-    references/
-      audit-vectors.md          what to look for + search patterns per language
-      severity-rubric.md        how to rate findings
-      report-template.md        exact report structure + one worked example
-evals/
-  fixtures/                     small repos with planted bugs and decoys
-  expected/                     the answer key, kept outside the fixtures
-  score.mjs                     scores one run
-  run-eval.mjs                  runs a real agent and scores every run
-  test/                         tests for the scorer (golden + bad report)
-scripts/
-  validate.mjs                  lint frontmatter, refs, patterns, em dashes
-  build.mjs                     generate dist/ adapters
-  install.sh                    copy or symlink into agent skill folders
-  lib.mjs                       shared helpers, no dependencies
-dist/                           generated, gitignored
-```
-
-## Local development
+To remove a bundled installation, repeat its scope and agent options with `--uninstall`:
 
 ```bash
-npm run dev      # symlink skills into your agent folders so edits show up live
-npm run check    # lint + scorer tests + build; run after every change
-npm run eval:claude   # the real test: run the skill against the fixtures
+bash scripts/install.sh --agent claude --uninstall
 ```
 
-There are zero npm dependencies. Clone it and it runs.
+For a Skills CLI installation, use `npx skills remove` and select the matching skill, agent, and scope.
 
-The validator checks that:
+</details>
 
-- `name` is lowercase with hyphens, at most 64 characters, and matches the folder name
-- `description` exists and stays under 1024 characters
-- `SKILL.md` stays under 500 lines
-- every `references/...` path mentioned in a skill actually exists
-- every documented search pattern compiles
-- no markdown file contains an em dash (house style)
+## How it works
 
-## How you know it works: evals
+The skill gives your agent a five-step workflow: map the codebase, investigate six audit vectors, rate confirmed defects, write the report, and verify its evidence and file changes.
 
-Linting proves the files are well formed. It doesn't prove an agent following them writes a good report. That takes code where you already know the answers.
+The main instructions live in [`SKILL.md`](skills/state-machine-audit/SKILL.md). Search guidance, the severity rubric, and the report template live in `references/` and are loaded as needed. The build script bundles those same sources into each adapter.
 
-Think of how airport security tests a scanner. They pack test bags with known items in known places, run them through, and count what got caught. They also send clean bags to make sure it doesn't flag a phone charger. `evals/fixtures/` holds those test bags:
+"Read-only" is an instruction to the agent, not a filesystem sandbox. The audit is allowed to write one new report and is instructed to leave existing files alone. Compare the final diff with your pre-audit changes when reviewing the result.
 
-- **Planted bugs** at known lines, one or more per audit vector
-- **Decoys** that look suspicious but are correct code (flagging one is a false positive)
-- **Canary secrets** that must never show up in a report
-- **A pre-existing `REPORT.md`** that must not be overwritten
+For large repositories, the workflow scopes the audit to a few modules with substantial state activity and records what it skipped. A clean report applies to that scope; it does not establish that the whole app is bug-free.
 
-Every run gets scored on recall, decoy hits, invented snippets, line accuracy, file integrity, structure and secret leaks. A finding only counts if its snippet really exists in the source, so a confident-sounding but invented finding earns nothing. Details and thresholds are in [evals/README.md](evals/README.md).
+## Contributing
+
+Found a state bug the skill missed? A small reproduction is especially useful. Include the expected behavior, the event ordering that breaks it, and the agent you used. Remove credentials and private code before sharing.
+
+Good contributions include new language fixtures, correct-code decoys, clearer audit rules, and evaluation runs with other agents. Start with [the evaluation guide](evals/README.md) if you're adding a fixture.
 
 ```bash
-npm run eval:claude      # or eval:codex, eval:gemini, or --cmd for anything else
+npm run check        # validate instructions, test the scorer, build adapters
+npm run eval:claude  # run real audits against the fixtures
 ```
 
-Run each fixture several times. Models aren't deterministic, and a skill that passes 2 runs out of 3 is not done.
+The real-agent evaluations require the corresponding CLI and authentication. Presets also exist as `npm run eval:codex` and `npm run eval:gemini`.
 
-### Current results
+Edit sources under `skills/`; `dist/` is generated. Keep findings grounded in a reproducible failure, and add a decoy when a new rule risks flagging valid code.
 
-Measured with headless Claude Code, starting cold with only "use the state-machine-audit skill":
+---
 
-| Fixture | Runs | Pass | Required bugs found | Decoys flagged | Invented snippets |
-|---|---|---|---|---|---|
-| react-shop (TypeScript) | 3 | 3/3 | 6/6 every run | 0 | 0 |
-| py-jobqueue (Python) | 3 | 3/3 | 5/5 every run | 0 | 0 |
-| both, via `AGENTS.md` adapter | 2 | 2/2 | all | 0 | 0 |
+<div align="center">
 
-The first version of the skill passed 2 of 4. The failures traced back to real gaps in the instructions (praise filed as a finding, two defects merged into one) and to a couple of scorer bugs, all fixed. The full history, and what these numbers don't prove yet (other agents, big repos, other languages), are in [evals/RESULTS.md](evals/RESULTS.md).
+### Found a bug before your users did?
 
-### Adding another skill
+**Give the repo a star so you can find it for the next review.**
 
-Make a new folder under `skills/` with its own `SKILL.md`. The installer, build and validator pick it up automatically. Add fixtures and an `expected/` file for it too, otherwise you're guessing.
+[Report a missed bug](https://github.com/adityaarakeri/state-machine-audit/issues) &nbsp; / &nbsp; [Add a fixture](evals/README.md) &nbsp; / &nbsp; [Read the changelog](CHANGELOG.md)
 
-## Changes from the original prompt
-
-The skill started life as a single prompt. The main changes:
-
-- The output spec had a code block nested inside another code block, which breaks rendering and confuses models about where the template ends. The template now lives in its own file, with a worked example.
-- Line numbers must come from opening the file, never from search output.
-- It writes a new report file and never overwrites an existing one.
-- Secrets in snippets get redacted.
-- Vendored and generated code is skipped, and "explicit state machine" is defined so inventory counts mean something.
-- A severity rubric, one finding per root cause, and a self-check step at the end.
+</div>
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+[MIT](LICENSE). Use it, adapt it, and bring your own suspicious status field.
